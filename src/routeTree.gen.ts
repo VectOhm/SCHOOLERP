@@ -16,6 +16,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminTransportRouteImport } from './routes/admin.transport'
+import { Route as AdminTimetableRouteImport } from './routes/admin.timetable'
 import { Route as AdminTeachersRouteImport } from './routes/admin.teachers'
 import { Route as AdminStudentsRouteImport } from './routes/admin.students'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
@@ -23,6 +24,7 @@ import { Route as AdminFeesRouteImport } from './routes/admin.fees'
 import { Route as AdminExpensesRouteImport } from './routes/admin.expenses'
 import { Route as AdminClassesRouteImport } from './routes/admin.classes'
 import { Route as AdminCalendarRouteImport } from './routes/admin.calendar'
+import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 
 const TeacherRoute = TeacherRouteImport.update({
   id: '/teacher',
@@ -57,6 +59,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const AdminTransportRoute = AdminTransportRouteImport.update({
   id: '/transport',
   path: '/transport',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTimetableRoute = AdminTimetableRouteImport.update({
+  id: '/timetable',
+  path: '/timetable',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminTeachersRoute = AdminTeachersRouteImport.update({
@@ -94,6 +101,11 @@ const AdminCalendarRoute = AdminCalendarRouteImport.update({
   path: '/calendar',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -101,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/parent': typeof ParentRoute
   '/teacher': typeof TeacherRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/classes': typeof AdminClassesRoute
   '/admin/expenses': typeof AdminExpensesRoute
@@ -108,6 +121,7 @@ export interface FileRoutesByFullPath {
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
+  '/admin/timetable': typeof AdminTimetableRoute
   '/admin/transport': typeof AdminTransportRoute
   '/admin/': typeof AdminIndexRoute
 }
@@ -116,6 +130,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/parent': typeof ParentRoute
   '/teacher': typeof TeacherRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/classes': typeof AdminClassesRoute
   '/admin/expenses': typeof AdminExpensesRoute
@@ -123,6 +138,7 @@ export interface FileRoutesByTo {
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
+  '/admin/timetable': typeof AdminTimetableRoute
   '/admin/transport': typeof AdminTransportRoute
   '/admin': typeof AdminIndexRoute
 }
@@ -133,6 +149,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/parent': typeof ParentRoute
   '/teacher': typeof TeacherRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/classes': typeof AdminClassesRoute
   '/admin/expenses': typeof AdminExpensesRoute
@@ -140,6 +157,7 @@ export interface FileRoutesById {
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
+  '/admin/timetable': typeof AdminTimetableRoute
   '/admin/transport': typeof AdminTransportRoute
   '/admin/': typeof AdminIndexRoute
 }
@@ -151,6 +169,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/parent'
     | '/teacher'
+    | '/admin/analytics'
     | '/admin/calendar'
     | '/admin/classes'
     | '/admin/expenses'
@@ -158,6 +177,7 @@ export interface FileRouteTypes {
     | '/admin/notifications'
     | '/admin/students'
     | '/admin/teachers'
+    | '/admin/timetable'
     | '/admin/transport'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
@@ -166,6 +186,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/parent'
     | '/teacher'
+    | '/admin/analytics'
     | '/admin/calendar'
     | '/admin/classes'
     | '/admin/expenses'
@@ -173,6 +194,7 @@ export interface FileRouteTypes {
     | '/admin/notifications'
     | '/admin/students'
     | '/admin/teachers'
+    | '/admin/timetable'
     | '/admin/transport'
     | '/admin'
   id:
@@ -182,6 +204,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/parent'
     | '/teacher'
+    | '/admin/analytics'
     | '/admin/calendar'
     | '/admin/classes'
     | '/admin/expenses'
@@ -189,6 +212,7 @@ export interface FileRouteTypes {
     | '/admin/notifications'
     | '/admin/students'
     | '/admin/teachers'
+    | '/admin/timetable'
     | '/admin/transport'
     | '/admin/'
   fileRoutesById: FileRoutesById
@@ -252,6 +276,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminTransportRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/timetable': {
+      id: '/admin/timetable'
+      path: '/timetable'
+      fullPath: '/admin/timetable'
+      preLoaderRoute: typeof AdminTimetableRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/teachers': {
       id: '/admin/teachers'
       path: '/teachers'
@@ -301,10 +332,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCalendarRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/analytics': {
+      id: '/admin/analytics'
+      path: '/analytics'
+      fullPath: '/admin/analytics'
+      preLoaderRoute: typeof AdminAnalyticsRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
 interface AdminRouteChildren {
+  AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   AdminCalendarRoute: typeof AdminCalendarRoute
   AdminClassesRoute: typeof AdminClassesRoute
   AdminExpensesRoute: typeof AdminExpensesRoute
@@ -312,11 +351,13 @@ interface AdminRouteChildren {
   AdminNotificationsRoute: typeof AdminNotificationsRoute
   AdminStudentsRoute: typeof AdminStudentsRoute
   AdminTeachersRoute: typeof AdminTeachersRoute
+  AdminTimetableRoute: typeof AdminTimetableRoute
   AdminTransportRoute: typeof AdminTransportRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAnalyticsRoute: AdminAnalyticsRoute,
   AdminCalendarRoute: AdminCalendarRoute,
   AdminClassesRoute: AdminClassesRoute,
   AdminExpensesRoute: AdminExpensesRoute,
@@ -324,6 +365,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminNotificationsRoute: AdminNotificationsRoute,
   AdminStudentsRoute: AdminStudentsRoute,
   AdminTeachersRoute: AdminTeachersRoute,
+  AdminTimetableRoute: AdminTimetableRoute,
   AdminTransportRoute: AdminTransportRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
