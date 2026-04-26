@@ -9,7 +9,7 @@ export const Route = createFileRoute("/teacher/attendance")({ component: Attenda
 function AttendancePage() {
   const { state, update, currentUser } = useStore();
   const teacher = state.teachers.find((t) => t.id === currentUser?.teacherId);
-  const [classId, setClassId] = useState(teacher?.classes[0] ?? "");
+  const [classId, setClassId] = useState<string>(teacher?.classes[0] ?? "");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   if (!teacher) return null;
   const students = state.students.filter((s) => s.classId === classId);
