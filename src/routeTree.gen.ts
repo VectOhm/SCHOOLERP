@@ -17,6 +17,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminTeachersRouteImport } from './routes/admin.teachers'
 import { Route as AdminStudentsRouteImport } from './routes/admin.students'
+import { Route as AdminFeesRouteImport } from './routes/admin.fees'
+import { Route as AdminExpensesRouteImport } from './routes/admin.expenses'
 import { Route as AdminClassesRouteImport } from './routes/admin.classes'
 
 const TeacherRoute = TeacherRouteImport.update({
@@ -59,6 +61,16 @@ const AdminStudentsRoute = AdminStudentsRouteImport.update({
   path: '/students',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminFeesRoute = AdminFeesRouteImport.update({
+  id: '/fees',
+  path: '/fees',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminExpensesRoute = AdminExpensesRouteImport.update({
+  id: '/expenses',
+  path: '/expenses',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminClassesRoute = AdminClassesRouteImport.update({
   id: '/classes',
   path: '/classes',
@@ -72,6 +84,8 @@ export interface FileRoutesByFullPath {
   '/parent': typeof ParentRoute
   '/teacher': typeof TeacherRoute
   '/admin/classes': typeof AdminClassesRoute
+  '/admin/expenses': typeof AdminExpensesRoute
+  '/admin/fees': typeof AdminFeesRoute
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
   '/admin/': typeof AdminIndexRoute
@@ -82,6 +96,8 @@ export interface FileRoutesByTo {
   '/parent': typeof ParentRoute
   '/teacher': typeof TeacherRoute
   '/admin/classes': typeof AdminClassesRoute
+  '/admin/expenses': typeof AdminExpensesRoute
+  '/admin/fees': typeof AdminFeesRoute
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
   '/admin': typeof AdminIndexRoute
@@ -94,6 +110,8 @@ export interface FileRoutesById {
   '/parent': typeof ParentRoute
   '/teacher': typeof TeacherRoute
   '/admin/classes': typeof AdminClassesRoute
+  '/admin/expenses': typeof AdminExpensesRoute
+  '/admin/fees': typeof AdminFeesRoute
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
   '/admin/': typeof AdminIndexRoute
@@ -107,6 +125,8 @@ export interface FileRouteTypes {
     | '/parent'
     | '/teacher'
     | '/admin/classes'
+    | '/admin/expenses'
+    | '/admin/fees'
     | '/admin/students'
     | '/admin/teachers'
     | '/admin/'
@@ -117,6 +137,8 @@ export interface FileRouteTypes {
     | '/parent'
     | '/teacher'
     | '/admin/classes'
+    | '/admin/expenses'
+    | '/admin/fees'
     | '/admin/students'
     | '/admin/teachers'
     | '/admin'
@@ -128,6 +150,8 @@ export interface FileRouteTypes {
     | '/parent'
     | '/teacher'
     | '/admin/classes'
+    | '/admin/expenses'
+    | '/admin/fees'
     | '/admin/students'
     | '/admin/teachers'
     | '/admin/'
@@ -199,6 +223,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminStudentsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/fees': {
+      id: '/admin/fees'
+      path: '/fees'
+      fullPath: '/admin/fees'
+      preLoaderRoute: typeof AdminFeesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/expenses': {
+      id: '/admin/expenses'
+      path: '/expenses'
+      fullPath: '/admin/expenses'
+      preLoaderRoute: typeof AdminExpensesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/classes': {
       id: '/admin/classes'
       path: '/classes'
@@ -211,6 +249,8 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteChildren {
   AdminClassesRoute: typeof AdminClassesRoute
+  AdminExpensesRoute: typeof AdminExpensesRoute
+  AdminFeesRoute: typeof AdminFeesRoute
   AdminStudentsRoute: typeof AdminStudentsRoute
   AdminTeachersRoute: typeof AdminTeachersRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -218,6 +258,8 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminClassesRoute: AdminClassesRoute,
+  AdminExpensesRoute: AdminExpensesRoute,
+  AdminFeesRoute: AdminFeesRoute,
   AdminStudentsRoute: AdminStudentsRoute,
   AdminTeachersRoute: AdminTeachersRoute,
   AdminIndexRoute: AdminIndexRoute,
