@@ -75,7 +75,7 @@ const parentNav: NavItem[] = [
 ];
 
 export function Shell() {
-  const { currentUser, logout, unreadNotifications } = useStore();
+  const { currentUser, logout, unreadNotifications, reset } = useStore();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -139,6 +139,18 @@ export function Shell() {
           })}
         </nav>
         <div className="border-t border-sidebar-border p-2">
+          {currentUser.role === "admin" && (
+            <button
+              onClick={() => {
+                if (confirm("Reset all demo data to defaults? This cannot be undone.")) {
+                  reset();
+                }
+              }}
+              className="mb-1 w-full rounded-md px-2 py-1.5 text-left text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              ↺ Reset demo data
+            </button>
+          )}
           <div className="flex items-center gap-2 rounded-md px-2 py-1.5">
             <div className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-xs font-semibold">
               {currentUser.name.split(" ").map((p) => p[0]).slice(0, 2).join("")}

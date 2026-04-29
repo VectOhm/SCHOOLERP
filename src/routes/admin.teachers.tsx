@@ -2,9 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useStore } from "@/erp/store/store";
 import { PageHeader, Badge, EmptyState } from "@/erp/components/Shell";
-import { Field, SelectField, Modal, FormActions } from "@/erp/components/Form";
-import { Plus, Trash2, GraduationCap } from "lucide-react";
+import { Field, Modal, FormActions, MultiToggle } from "@/erp/components/Form";
+import { Plus, Trash2, GraduationCap, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import type { Teacher } from "@/erp/types";
 
 export const Route = createFileRoute("/admin/teachers")({
   component: TeachersPage,
@@ -13,15 +14,18 @@ export const Route = createFileRoute("/admin/teachers")({
 function TeachersPage() {
   const { state, update } = useStore();
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Teacher | null>(null);
 
   function remove(id: string) {
-    if (!confirm("Remove teacher?")) return;
+    if (!confirm("Remove teacher? Their assignments and timetable slots will be cleared.")) return;
     update(
       (s) => ({
         ...s,
         teachers: s.teachers.filter((t) => t.id !== id),
         users: s.users.filter((u) => u.teacherId !== id),
         classSubjectAssignments: s.classSubjectAssignments.filter((c) => c.teacherId !== id),
+        timetable: s.timetable.filter((t) => t.teacherId !== id),
+        classes: s.classes.map((c) => (c.classTeacherId === id ? { ...c, classTeacherId: undefined } : c)),
       }),
       { action: "removed teacher", entity: id },
     );
@@ -83,9 +87,14 @@ function TeachersPage() {
                     </td>
                     <td className="text-xs text-muted-foreground">{t.joiningDate}</td>
                     <td>
-                      <button onClick={() => remove(t.id)} className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      <div className="flex gap-1">
+                        <button onClick={() => setEditing(t)} className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground" title="Edit">
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button onClick={() => remove(t.id)} className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" title="Remove">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -95,20 +104,22 @@ function TeachersPage() {
         )}
       </div>
 
-      {open && <AddTeacherModal onClose={() => setOpen(false)} />}
+      {open && <TeacherModal onClose={() => setOpen(false)} />}
+      {editing && <TeacherModal teacher={editing} onClose={() => setEditing(null)} />}
     </div>
   );
 }
 
-function AddTeacherModal({ onClose }: { onClose: () => void }) {
+function TeacherModal({ teacher, onClose }: { teacher?: Teacher; onClose: () => void }) {
   const { state, update } = useStore();
-  const [form, setForm] = useState({ name: "", email: "", phone: "" });
-  const [subjects, setSubjects] = useState<string[]>([]);
-  const [classes, setClasses] = useState<string[]>([]);
-
-  function toggle(arr: string[], setter: (v: string[]) => void, val: string) {
-    setter(arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]);
-  }
+  const isEdit = !!teacher;
+  const [form, setForm] = useState({
+    name: teacher?.name ?? "",
+    email: teacher?.email ?? "",
+    phone: teacher?.phone ?? "",
+  });
+  const [subjects, setSubjects] = useState<string[]>(teacher?.subjects ?? []);
+  const [classes, setClasses] = useState<string[]>(teacher?.classes ?? []);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -116,6 +127,58 @@ function AddTeacherModal({ onClose }: { onClose: () => void }) {
       toast.error("Name and email required");
       return;
     }
+
+    if (isEdit && teacher) {
+      const tid = teacher.id;
+      update(
+        (s) => {
+          // Build new valid (class,subject) combos for this teacher
+          const newCombos = new Set<string>();
+          classes.forEach((cid) => subjects.forEach((sid) => newCombos.add(`${cid}|${sid}`)));
+
+          // Update teacher record
+          const teachers = s.teachers.map((t) =>
+            t.id === tid ? { ...t, name: form.name, email: form.email, phone: form.phone, subjects, classes } : t,
+          );
+
+          // Reconcile classSubjectAssignments:
+          // - keep existing where combo still valid; remove teacher from classes/subjects no longer covered
+          // - add new assignments for newly added combos (only if no other teacher already assigned)
+          const remaining = s.classSubjectAssignments.filter((csa) => {
+            if (csa.teacherId !== tid) return true;
+            return newCombos.has(`${csa.classId}|${csa.subjectId}`);
+          });
+          const existingKeys = new Set(remaining.map((c) => `${c.classId}|${c.subjectId}`));
+          const additions = Array.from(newCombos)
+            .filter((k) => !existingKeys.has(k))
+            .map((k) => {
+              const [classId, subjectId] = k.split("|");
+              return { id: `csa_${classId}_${subjectId}_${tid}`, classId, subjectId, teacherId: tid };
+            });
+          const classSubjectAssignments = [...remaining, ...additions];
+
+          // Reconcile timetable slots: drop slots that no longer match a valid (class,subject,teacher=tid)
+          const validKeys = new Set(classSubjectAssignments.map((c) => `${c.classId}|${c.subjectId}|${c.teacherId}`));
+          const timetable = s.timetable.filter((slot) => {
+            if (slot.teacherId !== tid) return true;
+            return validKeys.has(`${slot.classId}|${slot.subjectId}|${tid}`);
+          });
+
+          // Update linked user
+          const users = s.users.map((u) =>
+            u.teacherId === tid ? { ...u, name: form.name, email: form.email } : u,
+          );
+
+          return { ...s, teachers, classSubjectAssignments, timetable, users };
+        },
+        { action: "edited teacher", entity: form.name },
+      );
+      toast.success("Teacher updated · classes & timetable reconciled");
+      onClose();
+      return;
+    }
+
+    // Create new
     const id = `tch_${Date.now()}`;
     update(
       (s) => ({
@@ -144,42 +207,26 @@ function AddTeacherModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <Modal open onClose={onClose} title="Add teacher" subtitle="Assign subjects and classes">
+    <Modal open onClose={onClose} title={isEdit ? `Edit ${teacher!.name}` : "Add teacher"} subtitle="Subjects & class assignments cascade to timetable">
       <form onSubmit={submit} className="grid grid-cols-2 gap-3">
         <Field label="Name" value={form.name} onChange={(v) => setForm({ ...form, name: v })} required />
         <Field label="Email" type="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} required />
         <Field label="Phone" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} />
-        <div className="col-span-2">
-          <label className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Subjects</label>
-          <div className="mt-1.5 flex flex-wrap gap-1.5">
-            {state.subjects.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => toggle(subjects, setSubjects, s.id)}
-                className={`rounded-md border px-2 py-1 text-xs ${subjects.includes(s.id) ? "border-accent bg-accent text-accent-foreground" : "border-border hover:bg-muted"}`}
-              >
-                {s.name}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="col-span-2">
-          <label className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Classes</label>
-          <div className="mt-1.5 flex flex-wrap gap-1.5">
-            {state.classes.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => toggle(classes, setClasses, c.id)}
-                className={`rounded-md border px-2 py-1 text-xs ${classes.includes(c.id) ? "border-accent bg-accent text-accent-foreground" : "border-border hover:bg-muted"}`}
-              >
-                {c.name}
-              </button>
-            ))}
-          </div>
-        </div>
-        <FormActions onCancel={onClose} submitLabel="Add teacher" />
+        <MultiToggle
+          label="Subjects"
+          values={state.subjects.map((s) => s.id)}
+          selected={subjects}
+          onChange={setSubjects}
+          getLabel={(id) => state.subjects.find((s) => s.id === id)?.name ?? id}
+        />
+        <MultiToggle
+          label="Classes"
+          values={state.classes.map((c) => c.id)}
+          selected={classes}
+          onChange={setClasses}
+          getLabel={(id) => state.classes.find((c) => c.id === id)?.name ?? id}
+        />
+        <FormActions onCancel={onClose} submitLabel={isEdit ? "Save changes" : "Add teacher"} />
       </form>
     </Modal>
   );

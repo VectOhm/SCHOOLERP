@@ -6,8 +6,10 @@ import { Plus, Bell } from "lucide-react";
 import { toast } from "sonner";
 import type { Notification, Role } from "../types";
 
+type Audience = Notification["audience"];
+
 interface Props {
-  audienceOptions: ("school" | "class" | "student")[];
+  audienceOptions: Audience[];
   /** filter visible notifications for current user */
   forUserId?: string;
   /** which classes the sender can target (teachers only) */
@@ -16,9 +18,11 @@ interface Props {
   allowedStudentIds?: string[];
   senderRole: Role;
   title: string;
+  /** if true, current user can only receive — no compose button */
+  receiveOnly?: boolean;
 }
 
-export function NotificationsView({ audienceOptions, forUserId, allowedClassIds, allowedStudentIds, senderRole, title }: Props) {
+export function NotificationsView({ audienceOptions, forUserId, allowedClassIds, allowedStudentIds, senderRole, title, receiveOnly }: Props) {
   const { state, update, currentUser } = useStore();
   const [open, setOpen] = useState(false);
 
@@ -35,11 +39,12 @@ export function NotificationsView({ audienceOptions, forUserId, allowedClassIds,
     if (u.role === "teacher" && u.teacherId) {
       const t = state.teachers.find((x) => x.id === u.teacherId);
       if (n.audience === "class" && t && n.classId && t.classes.includes(n.classId)) return true;
+      if (n.audience === "teachers") return true;
+      if (n.audience === "teacher" && n.teacherId === u.teacherId) return true;
     }
     return false;
   });
 
-  // Mark all visible as read on mount
   function markAllRead() {
     if (!forUserId) return;
     update((s) => ({
@@ -62,9 +67,11 @@ export function NotificationsView({ audienceOptions, forUserId, allowedClassIds,
                 Mark all read
               </button>
             )}
-            <button onClick={() => setOpen(true)} className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
-              <Plus className="h-3.5 w-3.5" /> Send notification
-            </button>
+            {!receiveOnly && (
+              <button onClick={() => setOpen(true)} className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+                <Plus className="h-3.5 w-3.5" /> Send notification
+              </button>
+            )}
           </div>
         }
       />
@@ -76,15 +83,17 @@ export function NotificationsView({ audienceOptions, forUserId, allowedClassIds,
             {visible.map((n) => {
               const isUnread = forUserId ? !n.readBy.includes(forUserId) : false;
               const cls = state.classes.find((c) => c.id === n.classId);
+              const targetTeacher = state.teachers.find((t) => t.id === n.teacherId);
               return (
                 <div
                   key={n.id}
                   className={`rounded-md border bg-card p-3 ${isUnread ? "border-accent" : "border-border"}`}
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Badge tone={n.audience === "school" ? "info" : n.audience === "class" ? "warning" : "muted"}>{n.audience}</Badge>
                       {cls && <span className="text-[11px] text-muted-foreground">{cls.name}</span>}
+                      {targetTeacher && <span className="text-[11px] text-muted-foreground">→ {targetTeacher.name}</span>}
                       <span className="text-sm font-medium">{n.title}</span>
                       {isUnread && <span className="h-1.5 w-1.5 rounded-full bg-accent" />}
                     </div>
@@ -111,11 +120,12 @@ export function NotificationsView({ audienceOptions, forUserId, allowedClassIds,
   );
 }
 
-function SendModal({ onClose, audienceOptions, allowedClassIds, allowedStudentIds, senderRole }: { onClose: () => void; audienceOptions: ("school" | "class" | "student")[]; allowedClassIds?: string[]; allowedStudentIds?: string[]; senderRole: Role }) {
+function SendModal({ onClose, audienceOptions, allowedClassIds, allowedStudentIds, senderRole }: { onClose: () => void; audienceOptions: Audience[]; allowedClassIds?: string[]; allowedStudentIds?: string[]; senderRole: Role }) {
   const { state, update, currentUser } = useStore();
-  const [audience, setAudience] = useState<Notification["audience"]>(audienceOptions[0]);
+  const [audience, setAudience] = useState<Audience>(audienceOptions[0]);
   const [classId, setClassId] = useState("");
   const [studentId, setStudentId] = useState("");
+  const [teacherId, setTeacherId] = useState("");
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
 
@@ -127,6 +137,7 @@ function SendModal({ onClose, audienceOptions, allowedClassIds, allowedStudentId
     if (!title || !message) { toast.error("Title and message required"); return; }
     if (audience === "class" && !classId) { toast.error("Pick a class"); return; }
     if (audience === "student" && !studentId) { toast.error("Pick a student"); return; }
+    if (audience === "teacher" && !teacherId) { toast.error("Pick a teacher"); return; }
     update(
       (s) => ({
         ...s,
@@ -136,6 +147,7 @@ function SendModal({ onClose, audienceOptions, allowedClassIds, allowedStudentId
             title, message, audience,
             classId: audience === "class" ? classId : undefined,
             studentId: audience === "student" ? studentId : undefined,
+            teacherId: audience === "teacher" ? teacherId : undefined,
             senderId: currentUser?.id ?? "u_admin",
             senderRole,
             createdAt: new Date().toISOString(),
@@ -150,15 +162,26 @@ function SendModal({ onClose, audienceOptions, allowedClassIds, allowedStudentId
     onClose();
   }
 
+  const audienceLabel: Record<Audience, string> = {
+    school: "Whole school",
+    class: "Specific class",
+    student: "Individual student",
+    teachers: "All teachers",
+    teacher: "Individual teacher",
+  };
+
   return (
     <Modal open onClose={onClose} title="Send notification">
       <form onSubmit={submit} className="grid grid-cols-2 gap-3">
-        <SelectField label="Audience" value={audience} onChange={(v) => setAudience(v as Notification["audience"])} options={audienceOptions.map((a) => [a, a])} />
+        <SelectField label="Audience" value={audience} onChange={(v) => setAudience(v as Audience)} options={audienceOptions.map((a) => [a, audienceLabel[a]])} />
         {audience === "class" && (
           <SelectField label="Class" value={classId} onChange={setClassId} options={[["", "Select class"], ...classes.map((c) => [c.id, c.name] as [string, string])]} />
         )}
         {audience === "student" && (
           <SelectField label="Student" value={studentId} onChange={setStudentId} options={[["", "Select student"], ...students.map((s) => [s.id, s.name] as [string, string])]} />
+        )}
+        {audience === "teacher" && (
+          <SelectField label="Teacher" value={teacherId} onChange={setTeacherId} options={[["", "Select teacher"], ...state.teachers.map((t) => [t.id, t.name] as [string, string])]} />
         )}
         <div className="col-span-2"><Field label="Title" value={title} onChange={setTitle} /></div>
         <div className="col-span-2"><TextareaField label="Message" value={message} onChange={setMessage} rows={4} /></div>

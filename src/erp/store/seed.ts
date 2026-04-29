@@ -17,6 +17,7 @@ import type {
   TimetableSlot,
   CalendarEvent,
   User,
+  Salary,
 } from "../types";
 
 const id = (p: string, n: number | string) => `${p}_${n}`;
@@ -117,10 +118,12 @@ export function buildSeed(): ERPState {
       driverName: "Ramesh Kumar",
       driverPhone: "+91 9123456701",
       busNumber: "DL-1A-1234",
+      baseFare: 800,
+      pricePerKm: 25,
       stops: [
-        { id: "bs_1", name: "Sector 12", pickupTime: "07:10", dropTime: "15:30" },
-        { id: "bs_2", name: "Civic Center", pickupTime: "07:25", dropTime: "15:15" },
-        { id: "bs_3", name: "Market Square", pickupTime: "07:40", dropTime: "15:00" },
+        { id: "bs_1", name: "Sector 12", pickupTime: "07:10", dropTime: "15:30", destination: "North Sector 12", distanceKm: 4 },
+        { id: "bs_2", name: "Civic Center", pickupTime: "07:25", dropTime: "15:15", destination: "Civic Center", distanceKm: 7 },
+        { id: "bs_3", name: "Market Square", pickupTime: "07:40", dropTime: "15:00", destination: "Market Square", distanceKm: 10 },
       ],
     },
     {
@@ -129,10 +132,12 @@ export function buildSeed(): ERPState {
       driverName: "Vinod Singh",
       driverPhone: "+91 9123456702",
       busNumber: "DL-2B-5678",
+      baseFare: 800,
+      pricePerKm: 30,
       stops: [
-        { id: "bs_4", name: "Lake View", pickupTime: "07:00", dropTime: "15:35" },
-        { id: "bs_5", name: "Rose Garden", pickupTime: "07:15", dropTime: "15:20" },
-        { id: "bs_6", name: "Old Town", pickupTime: "07:30", dropTime: "15:05" },
+        { id: "bs_4", name: "Lake View", pickupTime: "07:00", dropTime: "15:35", destination: "Lake View", distanceKm: 5 },
+        { id: "bs_5", name: "Rose Garden", pickupTime: "07:15", dropTime: "15:20", destination: "Rose Garden", distanceKm: 8 },
+        { id: "bs_6", name: "Old Town", pickupTime: "07:30", dropTime: "15:05", destination: "Old Town", distanceKm: 12 },
       ],
     },
     {
@@ -141,9 +146,11 @@ export function buildSeed(): ERPState {
       driverName: "Suraj Yadav",
       driverPhone: "+91 9123456703",
       busNumber: "DL-3C-9012",
+      baseFare: 1000,
+      pricePerKm: 35,
       stops: [
-        { id: "bs_7", name: "Hill Top", pickupTime: "07:05", dropTime: "15:40" },
-        { id: "bs_8", name: "Green Park", pickupTime: "07:20", dropTime: "15:25" },
+        { id: "bs_7", name: "Hill Top", pickupTime: "07:05", dropTime: "15:40", destination: "Hill Top", distanceKm: 9 },
+        { id: "bs_8", name: "Green Park", pickupTime: "07:20", dropTime: "15:25", destination: "Green Park", distanceKm: 6 },
       ],
     },
   ];
@@ -328,6 +335,27 @@ export function buildSeed(): ERPState {
     });
   }
 
+  // Monthly attendance — last 3 months (new model)
+  for (let m = 0; m < 3; m++) {
+    const md = new Date(today.getFullYear(), today.getMonth() - m, 1);
+    const monthStr = `${md.getFullYear()}-${(md.getMonth() + 1).toString().padStart(2, "0")}`;
+    const totalDays = 22;
+    students.forEach((st, idx) => {
+      const present = totalDays - ((idx + m) % 4);
+      attendance.push({
+        id: `mat_${st.id}_${monthStr}`,
+        studentId: st.id,
+        classId: st.classId,
+        date: `${monthStr}-01`,
+        month: monthStr,
+        totalDays,
+        presentDays: present,
+        status: "present",
+        markedBy: "tch_1",
+      });
+    });
+  }
+
   // Timetable — for each class, 6 periods Mon-Fri
   const timetable: TimetableSlot[] = [];
   const days: TimetableSlot["day"][] = ["Mon", "Tue", "Wed", "Thu", "Fri"];
@@ -380,6 +408,33 @@ export function buildSeed(): ERPState {
     })),
   ];
 
+  // Salaries — last 3 months for all teachers
+  const salaries: Salary[] = [];
+  for (let m = 0; m < 3; m++) {
+    const md = new Date(today.getFullYear(), today.getMonth() - m, 1);
+    const monthStr = `${md.getFullYear()}-${(md.getMonth() + 1).toString().padStart(2, "0")}`;
+    teachers.forEach((t, i) => {
+      const basic = 35000 + i * 1500;
+      const allowances = 5000;
+      const deductions = 1000;
+      const taxRate = 10;
+      const gross = basic + allowances - deductions;
+      const net = Math.round(gross * (1 - taxRate / 100));
+      salaries.push({
+        id: `sal_${t.id}_${monthStr}`,
+        teacherId: t.id,
+        month: monthStr,
+        basic,
+        allowances,
+        deductions,
+        taxRate,
+        net,
+        status: m === 0 ? "pending" : "paid",
+        paidOn: m === 0 ? undefined : `${monthStr}-28`,
+      });
+    });
+  }
+
   return {
     users,
     students,
@@ -401,5 +456,7 @@ export function buildSeed(): ERPState {
     calendar,
     activityLogs: [],
     messages: [],
+    salaries,
+    busFeeOverrides: [],
   };
 }

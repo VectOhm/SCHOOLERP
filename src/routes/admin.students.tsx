@@ -14,6 +14,11 @@ function StudentsPage() {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [classFilter, setClassFilter] = useState<string>("all");
+  const [busFilter, setBusFilter] = useState<string>("all");
+  const [feeFilter, setFeeFilter] = useState<"all" | "paid" | "pending">("all");
+  const [gender, setGender] = useState<"all" | "male" | "female">("all");
+  const [admittedFrom, setAdmittedFrom] = useState("");
+  const [admittedTo, setAdmittedTo] = useState("");
 
   const filtered = state.students.filter((s) => {
     const matchClass = classFilter === "all" || s.classId === classFilter;
@@ -22,7 +27,21 @@ function StudentsPage() {
       s.name.toLowerCase().includes(q.toLowerCase()) ||
       s.rollNo.toLowerCase().includes(q.toLowerCase()) ||
       s.parentName.toLowerCase().includes(q.toLowerCase());
-    return matchClass && matchQ;
+    const matchBus =
+      busFilter === "all" ||
+      (busFilter === "none" ? !s.busRouteId : s.busRouteId === busFilter);
+    const matchFee =
+      feeFilter === "all" ||
+      (feeFilter === "pending"
+        ? state.feePayments.some((p) => p.studentId === s.id && p.status === "pending")
+        : state.feePayments.filter((p) => p.studentId === s.id).every((p) => p.status === "paid"));
+    // Gender heuristic from first name list (simple check)
+    const femaleNames = ["Anaya", "Diya", "Saanvi", "Aadhya", "Myra", "Sara", "Riya", "Pari", "Anika", "Navya"];
+    const isFemale = femaleNames.some((n) => s.name.startsWith(n));
+    const matchGender = gender === "all" || (gender === "female" ? isFemale : !isFemale);
+    const matchAdmFrom = !admittedFrom || s.admissionDate >= admittedFrom;
+    const matchAdmTo = !admittedTo || s.admissionDate <= admittedTo;
+    return matchClass && matchQ && matchBus && matchFee && matchGender && matchAdmFrom && matchAdmTo;
   });
 
   function remove(id: string) {
@@ -76,6 +95,24 @@ function StudentsPage() {
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
           </select>
+          <select value={busFilter} onChange={(e) => setBusFilter(e.target.value)} className="rounded-md border border-input bg-background px-2 py-1.5 text-sm">
+            <option value="all">Any transport</option>
+            <option value="none">No bus</option>
+            {state.busRoutes.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+          </select>
+          <select value={feeFilter} onChange={(e) => setFeeFilter(e.target.value as typeof feeFilter)} className="rounded-md border border-input bg-background px-2 py-1.5 text-sm">
+            <option value="all">Any fee status</option>
+            <option value="paid">All cleared</option>
+            <option value="pending">Has pending</option>
+          </select>
+          <select value={gender} onChange={(e) => setGender(e.target.value as typeof gender)} className="rounded-md border border-input bg-background px-2 py-1.5 text-sm">
+            <option value="all">Any gender</option>
+            <option value="female">Female</option>
+            <option value="male">Male</option>
+          </select>
+          <input type="date" value={admittedFrom} onChange={(e) => setAdmittedFrom(e.target.value)} title="Admitted from" className="rounded-md border border-input bg-background px-2 py-1.5 text-sm" />
+          <input type="date" value={admittedTo} onChange={(e) => setAdmittedTo(e.target.value)} title="Admitted to" className="rounded-md border border-input bg-background px-2 py-1.5 text-sm" />
+          <button onClick={() => { setQ(""); setClassFilter("all"); setBusFilter("all"); setFeeFilter("all"); setGender("all"); setAdmittedFrom(""); setAdmittedTo(""); }} className="rounded-md border border-border px-2.5 py-1.5 text-xs hover:bg-muted">Clear</button>
         </div>
 
         {filtered.length === 0 ? (
