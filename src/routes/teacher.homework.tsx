@@ -15,8 +15,9 @@ function HomeworkPage() {
   const [open, setOpen] = useState(false);
   const [showBot, setShowBot] = useState(false);
   if (!teacher) return null;
-  const list = state.homework.filter((h) => h.teacherId === teacher.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  const myCsa = state.classSubjectAssignments.filter((a) => a.teacherId === teacher.id);
+  const t = teacher;
+  const list = state.homework.filter((h) => h.teacherId === t.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const myCsa = state.classSubjectAssignments.filter((a) => a.teacherId === t.id);
 
   function parseHomework(input: string): string {
     // Examples:
@@ -32,7 +33,7 @@ function HomeworkPage() {
       const grade = Number(clsMatch[1]);
       const section = (clsMatch[2] ?? "A").toUpperCase();
       const cls = state.classes.find((c) => c.grade === grade && c.section === section);
-      if (cls && teacher.classes.includes(cls.id)) classId = cls.id;
+      if (cls && t.classes.includes(cls.id)) classId = cls.id;
     }
     if (!classId) return "✗ Tell me which class. Try: 'class 5-A' or 'grade 3'.";
 
@@ -40,13 +41,13 @@ function HomeworkPage() {
     let subjectId = "";
     for (const sub of state.subjects) {
       if (lower.includes(sub.name.toLowerCase()) || lower.includes(sub.code.toLowerCase())) {
-        if (teacher.subjects.includes(sub.id) && myCsa.some((a) => a.classId === classId && a.subjectId === sub.id)) {
+        if (t.subjects.includes(sub.id) && myCsa.some((a) => a.classId === classId && a.subjectId === sub.id)) {
           subjectId = sub.id;
           break;
         }
       }
     }
-    if (!subjectId) return "✗ Which subject? You teach: " + teacher.subjects.map((sid) => state.subjects.find((s) => s.id === sid)?.name).join(", ");
+    if (!subjectId) return "✗ Which subject? You teach: " + t.subjects.map((sid) => state.subjects.find((s) => s.id === sid)?.name).join(", ");
 
     // due date — "due 2026-05-01", "due tomorrow", "due in 3 days", "due friday"
     let dueDate = new Date(Date.now() + 86400000 * 3).toISOString().split("T")[0];
@@ -84,7 +85,7 @@ function HomeworkPage() {
       (s) => ({
         ...s,
         homework: [
-          { id: `hw_${Date.now()}`, classId, subjectId, teacherId: teacher.id, title, description, dueDate, createdAt: new Date().toISOString() },
+          { id: `hw_${Date.now()}`, classId, subjectId, teacherId: t.id, title, description, dueDate, createdAt: new Date().toISOString() },
           ...s.homework,
         ],
       }),
