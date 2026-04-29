@@ -36,6 +36,7 @@ import { Route as ParentFeesRouteImport } from './routes/parent.fees'
 import { Route as ParentCalendarRouteImport } from './routes/parent.calendar'
 import { Route as ParentAttendanceRouteImport } from './routes/parent.attendance'
 import { Route as AdminTransportRouteImport } from './routes/admin.transport'
+import { Route as AdminTimetableRouteImport } from './routes/admin.timetable'
 import { Route as AdminTeachersRouteImport } from './routes/admin.teachers'
 import { Route as AdminStudentsRouteImport } from './routes/admin.students'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
@@ -181,6 +182,11 @@ const AdminTransportRoute = AdminTransportRouteImport.update({
   path: '/transport',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminTimetableRoute = AdminTimetableRouteImport.update({
+  id: '/timetable',
+  path: '/timetable',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminTeachersRoute = AdminTeachersRouteImport.update({
   id: '/teachers',
   path: '/teachers',
@@ -242,6 +248,7 @@ export interface FileRoutesByFullPath {
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
+  '/admin/timetable': typeof AdminTimetableRoute
   '/admin/transport': typeof AdminTransportRoute
   '/parent/attendance': typeof ParentAttendanceRoute
   '/parent/calendar': typeof ParentCalendarRoute
@@ -277,6 +284,7 @@ export interface FileRoutesByTo {
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
+  '/admin/timetable': typeof AdminTimetableRoute
   '/admin/transport': typeof AdminTransportRoute
   '/parent/attendance': typeof ParentAttendanceRoute
   '/parent/calendar': typeof ParentCalendarRoute
@@ -316,6 +324,7 @@ export interface FileRoutesById {
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
+  '/admin/timetable': typeof AdminTimetableRoute
   '/admin/transport': typeof AdminTransportRoute
   '/parent/attendance': typeof ParentAttendanceRoute
   '/parent/calendar': typeof ParentCalendarRoute
@@ -356,6 +365,7 @@ export interface FileRouteTypes {
     | '/admin/notifications'
     | '/admin/students'
     | '/admin/teachers'
+    | '/admin/timetable'
     | '/admin/transport'
     | '/parent/attendance'
     | '/parent/calendar'
@@ -391,6 +401,7 @@ export interface FileRouteTypes {
     | '/admin/notifications'
     | '/admin/students'
     | '/admin/teachers'
+    | '/admin/timetable'
     | '/admin/transport'
     | '/parent/attendance'
     | '/parent/calendar'
@@ -429,6 +440,7 @@ export interface FileRouteTypes {
     | '/admin/notifications'
     | '/admin/students'
     | '/admin/teachers'
+    | '/admin/timetable'
     | '/admin/transport'
     | '/parent/attendance'
     | '/parent/calendar'
@@ -652,6 +664,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminTransportRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/timetable': {
+      id: '/admin/timetable'
+      path: '/timetable'
+      fullPath: '/admin/timetable'
+      preLoaderRoute: typeof AdminTimetableRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/teachers': {
       id: '/admin/teachers'
       path: '/teachers'
@@ -728,6 +747,7 @@ interface AdminRouteChildren {
   AdminNotificationsRoute: typeof AdminNotificationsRoute
   AdminStudentsRoute: typeof AdminStudentsRoute
   AdminTeachersRoute: typeof AdminTeachersRoute
+  AdminTimetableRoute: typeof AdminTimetableRoute
   AdminTransportRoute: typeof AdminTransportRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -742,6 +762,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminNotificationsRoute: AdminNotificationsRoute,
   AdminStudentsRoute: AdminStudentsRoute,
   AdminTeachersRoute: AdminTeachersRoute,
+  AdminTimetableRoute: AdminTimetableRoute,
   AdminTransportRoute: AdminTransportRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
