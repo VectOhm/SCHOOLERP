@@ -1,0 +1,17 @@
+node_modules
+.git
+.gitignore
+.prettierignore
+.prettierrc
+.wrangler
+dist
+.output
+.vinxi
+.tanstack
+.nitro
+*.local
+wrangler.jsonc
+bunfig.toml
+pnpm-lock.yaml
+bun.lockb
+.
