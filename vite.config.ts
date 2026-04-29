@@ -7,6 +7,8 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
+  // Disable Cloudflare plugin so Vercel gets a standard Node.js/static build
+  cloudflare: false,
   vite: {
     build: {
       rollupOptions: {
